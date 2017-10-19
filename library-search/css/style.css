@@ -1,0 +1,16 @@
+.library-form-outer{
+	padding: 40px 0 0 0;
+}
+
+.library-result-outer{
+	padding: 10px 0 30px;
+}
+
+.library-form-outer .field{
+	padding: 7px 15px;
+	width: 100%;
+}
+
+.library-form-outer h4{
+	margin-bottom: 10px;
+}
