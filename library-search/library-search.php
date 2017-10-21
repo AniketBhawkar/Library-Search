@@ -34,6 +34,7 @@ function create_libraryposttype() {
 			'supports' => array(
 				'title',
 				'revisions',
+				'editor',
 			),
 			'has_archive' => true,
 			'hierarchical' => false,
@@ -43,17 +44,68 @@ function create_libraryposttype() {
 	);
 }
 
+function create_library_taxonomies() {
+	$labels = array(
+		'name'              => _x( 'AuthorCategory', 'taxonomy general name' ),
+		'singular_name'     => _x( 'AuthorCategory', 'taxonomy singular name' ),
+		'search_items'      => __( 'Search AuthorCategory' ),
+		'all_items'         => __( 'All AuthorCategory' ),
+		'parent_item'       => __( 'Parent AuthorCategory' ),
+		'parent_item_colon' => __( 'Parent AuthorCategory:' ),
+		'edit_item'         => __( 'Edit AuthorCategory' ),
+		'update_item'       => __( 'Update AuthorCategory' ),
+		'add_new_item'      => __( 'Add New AuthorCategory' ),
+		'new_item_name'     => __( 'New AuthorCategory' ),
+		'menu_name'         => __( 'Author Category' ),
+	);
+
+	$args = array(
+		'hierarchical'      => true,
+		'labels'            => $labels,
+		'show_ui'           => true,
+		'show_admin_column' => true,
+		'query_var'         => true,
+	);
+
+	register_taxonomy( 'authorcategory', array( 'books' ), $args );
+	
+	$labels = array(
+		'name'              => _x( 'PublisherCategory', 'taxonomy general name' ),
+		'singular_name'     => _x( 'PublisherCategory', 'taxonomy singular name' ),
+		'search_items'      => __( 'Search PublisherCategory' ),
+		'all_items'         => __( 'All PublisherCategory' ),
+		'parent_item'       => __( 'Parent PublisherCategory' ),
+		'parent_item_colon' => __( 'Parent PublisherCategory:' ),
+		'edit_item'         => __( 'Edit PublisherCategory' ),
+		'update_item'       => __( 'Update PublisherCategory' ),
+		'add_new_item'      => __( 'Add New PublisherCategory' ),
+		'new_item_name'     => __( 'New PublisherCategory' ),
+		'menu_name'         => __( 'Publisher Category' ),
+	);
+
+	$args = array(
+		'hierarchical'      => true,
+		'labels'            => $labels,
+		'show_ui'           => true,
+		'show_admin_column' => true,
+		'query_var'         => true,
+	);
+
+	register_taxonomy( 'publishercategory', array( 'books' ), $args );	
+}
+
+add_action( 'init', 'create_library_taxonomies', 0 );
 
 function add_library_metaboxes() {
-	add_meta_box('wpt_library_author', 'Library Author', 'wpt_library_author', 'books', 'normal', 'default');
+	add_meta_box('wpt_library_author', 'Book Meta Information', 'wpt_library_author', 'books', 'normal', 'default');
 }
 
 function wpt_library_author() {
 	global $post;
-	echo 'Author:<br/><input type="hidden" name="librarymeta_noncename" id="librarymeta_noncename" value="' . 
+	echo 'Rating:<br/><input type="hidden" name="librarymeta_noncename" id="librarymeta_noncename" value="' . 
 	wp_create_nonce( plugin_basename(__FILE__) ) . '" />';
-	$author = get_post_meta($post->ID, '_author', true);
-	echo '<input type="text" name="_author" value="' . $author  . '" class="widefat" />';
+	$rating = get_post_meta($post->ID, '_rating', true);
+	echo '<input type="text" name="_rating" value="' . $rating  . '" class="widefat" />';
 
 	echo 'Price:<br/><input type="hidden" name="librarymeta_noncename" id="librarymeta_noncename" value="' . 
 	wp_create_nonce( plugin_basename(__FILE__) ) . '" />';
@@ -67,7 +119,7 @@ function wpt_save_library_meta($post_id, $post) {
 	}
 	if ( !current_user_can( 'edit_post', $post->ID ))
 		return $post->ID;
-	$library_meta['_author'] = $_POST['_author'];
+	$library_meta['_rating'] = $_POST['_rating'];
 	$library_meta['_price'] = $_POST['_price'];
 	foreach ($library_meta as $key => $value){
 		if( $post->post_type == 'revision' ) 
@@ -90,18 +142,58 @@ add_action('save_post', 'wpt_save_library_meta', 1, 2);
 function library_search_func() {
 	$html = '';
 	$html .= '<div class="container library-form-outer">';
-		$html .= '<form name="library-form">';
+		$html .= '<form name="library-form" class="library-form">';
 			$html .= '<div class="col-xs-12">';
 				$html .= '<div class="col-xs-12"><h4>Library Search Plugin</h4></div>';
 				$html .= '<div class="col-xs-6">';
-					$html .= '<input type="text" class="field" name="book-meta" placeholder="Book Title, Author, Price">';
+					$html .= 'Book Title<input type="text" class="field" name="book-title" placeholder="Book Title">';
+				$html .= '</div>';
+				$html .= '<div class="col-xs-6">';
+					//$html .= '<input type="text" class="field" name="book-author" placeholder="Author">';
+					$html .= 'Author<select class="field" name="book-author">';
+						$authorterms = get_terms( array(
+							'taxonomy' => 'authorcategory',
+							'hide_empty' => false,
+						) );
+						//print_r($authorterms);
+						foreach($authorterms as $at){
+							$html .= '<option value="'.$at->slug.'">'.$at->name.'</option>';
+						}
+					$html .= '</select>';
+				$html .= '</div>';		
+				$html .= '<div class="col-xs-6">';
+					//$html .= '<input type="text" class="field" name="book-publisher" placeholder="Publisher">';
+					$html .= 'Publisher<select class="field" name="book-publisher">';
+						$publisherterms = get_terms( array(
+							'taxonomy' => 'publishercategory',
+							'hide_empty' => false,
+						) );
+						foreach($publisherterms as $pt){
+							$html .= '<option value="'.$pt->slug.'">'.$pt->name.'</option>';
+						}
+					$html .= '</select>';
+				$html .= '</div>';
+				$html .= '<div class="col-xs-6">';
+					$html .= 'Rating<select class="field" name="book-rating" placeholder="Rating">';
+						$html .= '<option value="1">1</option>';
+						$html .= '<option value="2">2</option>';
+						$html .= '<option value="3">3</option>';
+						$html .= '<option value="4">4</option>';
+						$html .= '<option value="5">5</option>';
+					$html .= '</select>';
+				$html .= '</div>';
+				$html .= '<div class="col-xs-6">';
+					$html .= 'Min Value<input type="text" class="field" name="book-min-value" placeholder="Min Value">';
+				$html .= '</div>';
+				$html .= '<div class="col-xs-6">';
+					$html .= 'Max Value<input type="text" class="field" name="book-max-value" placeholder="Max Value">';
 				$html .= '</div>';
 			$html .= '</div>';
-			/* $html .= '<div class="col-xs-12">';
+			$html .= '<div class="col-xs-12">';
 				$html .= '<div class="col-xs-4">';
 					$html .= '<input type="submit" name="book-meta-submit" value="Submit">';
 				$html .= '</div>';
-			$html .= '</div>'; */
+			$html .= '</div>';
 		$html .= '</form>';
 		$html .= '<div class="container">';
 			$html .= '<div class="col-xs-12">';
@@ -114,5 +206,20 @@ function library_search_func() {
 	echo $html;
 }
 add_shortcode( 'library_search', 'library_search_func' );
+
+/* Filter the single_template with our custom function*/
+add_filter('single_template', 'library_custom_template');
+
+function library_custom_template($single) {
+
+    global $wp_query, $post;
+    if ( $post->post_type == 'books' ) {
+        if ( file_exists( dirname( __FILE__ ) . '\single-books.php' ) ) {
+            return dirname( __FILE__ ) . '\single-books.php';
+        }
+    }
+    return $single;
+
+}
 
 ?>

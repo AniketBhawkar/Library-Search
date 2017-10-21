@@ -9,8 +9,18 @@
 .library-form-outer .field{
 	padding: 7px 15px;
 	width: 100%;
+	margin-bottom: 15px;
+	height: 46px;
 }
 
 .library-form-outer h4{
 	margin-bottom: 10px;
+}
+
+.singleBook{
+	margin: 30px 0;
+}
+
+.singleBook .singleBookTitle{
+	margin-bottom: 15px;
 }
